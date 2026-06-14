@@ -14,7 +14,18 @@ export function initAnalytics(): void {
   if (posthog || !KEY) return;
   try {
     const PostHog = require('posthog-react-native').default;
-    posthog = new PostHog(KEY, { host: HOST });
+    // 自動収集は最小限に。アプリ起動だけでは何も送らず、明示的な capture() のみ送信する。
+    posthog = new PostHog(KEY, {
+      host: HOST,
+      captureNativeAppLifecycleEvents: false,
+      // セッションリプレイ等は使わない（デフォルト無効だが明示）
+    });
+    // 既にオプトアウトされている場合は SDK 側にも反映
+    if (optedOut) {
+      try {
+        posthog.optOut?.();
+      } catch {}
+    }
   } catch (e) {
     if (__DEV__) console.warn('[analytics] 初期化に失敗（未導入/ExpoGo等）', e);
   }

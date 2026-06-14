@@ -14,7 +14,7 @@ import { BrowseScreen } from './screens/BrowseScreen';
 import { FolderListScreen } from './screens/FolderListScreen';
 import { MoreScreen } from './screens/MoreScreen';
 import { RunnerScreen } from './screens/RunnerScreen';
-import { Ev, track } from './analytics/analytics';
+import { Ev, setAnalyticsOptOut, track } from './analytics/analytics';
 
 export function Shell() {
   const store = useStore();
@@ -60,6 +60,11 @@ export function Shell() {
       track(Ev.proGateShown, { source: 'browse' });
     }
   }, [tab, pro, runner]);
+
+  // 分析オプトアウト設定を分析モジュールへ反映
+  useEffect(() => {
+    setAnalyticsOptOut(store.state.analyticsOptOut);
+  }, [store.state.analyticsOptOut]);
 
   let screen: React.ReactNode;
   if (runner) {

@@ -64,7 +64,13 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
         {/* 購入ボタン（未Pro かつ 課金が使える環境のときだけ表示） */}
         {!isPro && purchases.available && (
           <Pressable
-            onPress={purchases.purchasePro}
+            onPress={async () => {
+              const r = await purchases.purchasePro();
+              if (r === 'ok') toast('Pro を有効にしました');
+              else if (r === 'error') toast('購入に失敗しました。時間をおいて再度お試しください');
+              else if (r === 'unavailable') toast('現在購入できません');
+              // cancelled はトーストしない
+            }}
             style={{
               borderTopWidth: 1,
               borderTopColor: c.line,
@@ -144,6 +150,19 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
               ダークモードは Pro 機能です
             </Text>
           )}
+        </View>
+      </View>
+
+      {/* プライバシー（分析オプトアウト） */}
+      <View style={[panel(c), { overflow: 'hidden', marginTop: 18 }]}>
+        <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: c.ink }}>利用状況の分析を許可</Text>
+            <Switch on={!store.state.analyticsOptOut} onChange={(v) => store.setAnalyticsOptOut(!v)} />
+          </View>
+          <Text style={{ fontSize: 11.5, color: c.sub, marginTop: 8, lineHeight: 18 }}>
+            アプリ改善のため、匿名の利用状況（どの画面・機能を使ったか）を送信します。広告や個人の特定、他社アプリをまたぐ追跡は行いません。オフにすると送信を停止します。
+          </Text>
         </View>
       </View>
 

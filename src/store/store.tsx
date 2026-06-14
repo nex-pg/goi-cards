@@ -66,6 +66,7 @@ export interface UserState {
   settings: { counts: Record<CountKey, number> };
   ui: UiState;
   pro: boolean;
+  analyticsOptOut: boolean; // 利用状況の分析送信を停止するか
 }
 
 const STORE_KEY = 'goiapp_v1';
@@ -107,6 +108,7 @@ function defaultState(): UserState {
     settings: { counts: { ...DEFAULT_COUNTS } },
     ui: defaultUi(),
     pro: false,
+    analyticsOptOut: false,
   };
 }
 
@@ -132,6 +134,7 @@ function ensureCounts(s: UserState): UserState {
   const seed = old.counts || {};
   s.settings = { counts: { ...DEFAULT_COUNTS, ...seed } };
   if (typeof s.pro !== 'boolean') s.pro = false;
+  if (typeof s.analyticsOptOut !== 'boolean') s.analyticsOptOut = false;
   if (Array.isArray(s.folders)) {
     s.folders = s.folders.map((f) => (f.id === 'default' ? { ...f, name: 'デフォルト' } : f));
   }
@@ -165,6 +168,7 @@ function migrate(s: any): UserState {
     settings: s.settings || { counts: { ...DEFAULT_COUNTS } },
     ui: (s as any).ui || defaultUi(),
     pro: !!s.pro,
+    analyticsOptOut: !!s.analyticsOptOut,
   };
 }
 
@@ -224,6 +228,7 @@ export interface StoreApi {
   setCount: (key: CountKey, n: number) => void;
   setPro: (v: boolean) => void;
   setEntitlement: (v: boolean) => void;
+  setAnalyticsOptOut: (v: boolean) => void;
   setQuizFilters: (f: UiState['quiz']) => void;
   setListPref: (kind: ListKind, pref: Partial<UiState['lists'][ListKind]>) => void;
   setBrowsePref: (pref: Partial<UiState['browse']>) => void;
@@ -464,6 +469,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const setPro = useCallback((v: boolean) => setState((s) => ({ ...s, pro: !!v })), []);
   // IAP 層（RevenueCat）から entitlement を反映する。
   const setEntitlement = useCallback((v: boolean) => setEntitlementPro(!!v), []);
+  const setAnalyticsOptOut = useCallback(
+    (v: boolean) => setState((s) => ({ ...s, analyticsOptOut: !!v })),
+    []
+  );
 
   // ── タブごとの UI 選択状態（フィルタ/ソート/ランダム）の保存 ──
   const setQuizFilters = useCallback((f: UiState['quiz']) => {
@@ -520,6 +529,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setCount,
     setPro,
     setEntitlement,
+    setAnalyticsOptOut,
     setQuizFilters,
     setListPref,
     setBrowsePref,

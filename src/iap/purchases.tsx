@@ -22,10 +22,12 @@ try {
   Purchases = null;
 }
 
+type PurchaseResult = 'ok' | 'cancelled' | 'unavailable' | 'error';
+
 interface PurchasesValue {
   available: boolean; // 課金が使える環境か（SDK+APIキーあり）
   priceString: string | null; // 例: "¥300"
-  purchasePro: () => Promise<void>;
+  purchasePro: () => Promise<PurchaseResult>;
   restore: () => Promise<{ restored: boolean }>;
 }
 
@@ -65,18 +67,21 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [available]);
 
-  const purchasePro = async () => {
-    if (!available || !pkg) return;
+  const purchasePro = async (): Promise<PurchaseResult> => {
+    if (!available || !pkg) return 'unavailable';
     track(Ev.proPurchaseStarted);
     try {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
       if (customerInfo?.entitlements?.active?.[ENTITLEMENT_ID]) {
         store.setEntitlement(true);
         track(Ev.proPurchased);
+        return 'ok';
       }
+      return 'error';
     } catch (e: any) {
-      // ユーザーキャンセルは無視
-      if (!e?.userCancelled && __DEV__) console.warn('[iap] 購入失敗', e);
+      if (e?.userCancelled) return 'cancelled';
+      if (__DEV__) console.warn('[iap] 購入失敗', e);
+      return 'error';
     }
   };
 
