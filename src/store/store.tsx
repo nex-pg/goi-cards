@@ -168,8 +168,14 @@ function migrate(s: any): UserState {
 }
 
 function loadState(): UserState {
-  const raw = readJSON<any>(STORE_KEY);
-  if (raw) return ensureUi(ensureCounts(migrate(raw)));
+  // 移行処理で万一エラーが出てもクラッシュさせない（クラッシュ→再インストール＝本当の消失を防ぐ）。
+  // 注意: アップデート間で STORE_KEY / MMKV id を変えると保存が読めなくなる（=消えたように見える）ので絶対に変えない。
+  try {
+    const raw = readJSON<any>(STORE_KEY);
+    if (raw) return ensureUi(ensureCounts(migrate(raw)));
+  } catch (e) {
+    if (__DEV__) console.warn('[store] 読み込み/移行に失敗。既定値で起動します', e);
+  }
   return defaultState();
 }
 
