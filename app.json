@@ -1,15 +1,18 @@
 {
   "expo": {
-    "name": "goi-cards",
+    "name": "語彙トレカード",
     "slug": "goi-cards",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "scheme": "goicards",
+    "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.goicards.app"
     },
     "android": {
+      "package": "com.goicards.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
