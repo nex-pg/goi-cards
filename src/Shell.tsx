@@ -1,6 +1,6 @@
 // アプリ外殻: タブ切替 / 画面ルーティング / リスト起動の問題 / Proゲート。
 // prototype/shell.jsx の Shell を移植。下部タブは常時表示。
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore, type CountKey } from './store/store';
@@ -14,6 +14,7 @@ import { BrowseScreen } from './screens/BrowseScreen';
 import { FolderListScreen } from './screens/FolderListScreen';
 import { MoreScreen } from './screens/MoreScreen';
 import { RunnerScreen } from './screens/RunnerScreen';
+import { Ev, track } from './analytics/analytics';
 
 export function Shell() {
   const store = useStore();
@@ -46,11 +47,19 @@ export function Shell() {
   };
   const openFolders = () => {
     if (!pro) {
+      track(Ev.proGateShown, { source: 'folder' });
       setProDialog(true);
       return;
     }
     setBookmarkView('folders');
   };
+
+  // 一覧タブのProゲート表示を計測
+  useEffect(() => {
+    if (tab === 'browse' && !pro && !runner) {
+      track(Ev.proGateShown, { source: 'browse' });
+    }
+  }, [tab, pro, runner]);
 
   let screen: React.ReactNode;
   if (runner) {

@@ -5,24 +5,31 @@ import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useStore } from '../store/store';
 import { useTheme, type ThemeMode } from '../theme/theme';
 import { useToast } from '../hooks/useToast';
+import { usePurchases } from '../iap/purchases';
 import { Icon } from '../components/Icon';
 import { SegTabs, Switch, panel } from '../components/ui';
 
-// 申請時に正式なURLへ差し替える（docs/05 §6）。
-const PRIVACY_URL = 'https://example.com/goi-cards/privacy';
-const TERMS_URL = 'https://example.com/goi-cards/terms';
+// 申請時に GitHub Pages の正式URLへ（docs/ 配下の privacy.html / terms.html を公開）。
+const PRIVACY_URL = 'https://nex-pg.github.io/goi-cards/privacy.html';
+const TERMS_URL = 'https://nex-pg.github.io/goi-cards/terms.html';
 
 export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
   const store = useStore();
   const { colors: c, mode, setMode } = useTheme();
   const toast = useToast();
-  const pro = store.state.pro;
+  const purchases = usePurchases();
+  const isPro = store.isPro; // 実効（entitlement or 開発トグル）
+  const devPro = store.state.pro; // 開発用トグルの値
 
   const open = (url: string) => Linking.openURL(url).catch(() => toast('リンクを開けませんでした'));
 
-  const restore = () => {
-    // 本番: Purchases.restorePurchases() を呼ぶ（docs/03 §2-7）。Apple審査で必須。
-    toast('購入の復元は本番ビルドで有効になります');
+  const restore = async () => {
+    if (!purchases.available) {
+      toast('購入の復元は本番ビルドで有効になります');
+      return;
+    }
+    const { restored } = await purchases.restore();
+    toast(restored ? 'Pro を復元しました' : '復元できる購入が見つかりませんでした');
   };
 
   return (
@@ -40,7 +47,7 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 8 }}>
             <Icon name="star" size={20} filled color={c.ink} />
             <Text style={{ fontSize: 17, fontWeight: '700', color: c.ink }}>語彙トレカード Pro</Text>
-            {pro && (
+            {isPro && (
               <View style={{ marginLeft: 'auto', backgroundColor: c.ink, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999 }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: c.paper }}>有効</Text>
               </View>
@@ -54,7 +61,28 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
           </Text>
         </View>
 
-        {/* 開発用テストトグル（__DEV__ のときのみ表示）。本番は RevenueCat に差し替え（docs/03）。 */}
+        {/* 購入ボタン（未Pro かつ 課金が使える環境のときだけ表示） */}
+        {!isPro && purchases.available && (
+          <Pressable
+            onPress={purchases.purchasePro}
+            style={{
+              borderTopWidth: 1,
+              borderTopColor: c.line,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text style={{ fontSize: 15, fontWeight: '700', color: c.ink }}>Proにアップグレード</Text>
+            {purchases.priceString && (
+              <Text style={{ fontSize: 14, fontWeight: '700', color: c.ink }}>{purchases.priceString}</Text>
+            )}
+          </Pressable>
+        )}
+
+        {/* 開発用テストトグル（__DEV__ のときのみ表示）。本番は RevenueCat の entitlement が真実（docs/03）。 */}
         {__DEV__ && (
           <View
             style={{
@@ -71,7 +99,7 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
               Proを有効にする
               <Text style={{ fontSize: 11, color: c.sub, fontWeight: '500' }}>（開発用）</Text>
             </Text>
-            <Switch on={pro} onChange={(v) => store.setPro(v)} />
+            <Switch on={devPro} onChange={(v) => store.setPro(v)} />
           </View>
         )}
 
@@ -102,8 +130,8 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
           >
             <Text style={{ fontSize: 16, fontWeight: '600', color: c.ink }}>表示モード</Text>
             <SegTabs<ThemeMode>
-              value={pro ? mode : 'light'}
-              disabled={!pro}
+              value={isPro ? mode : 'light'}
+              disabled={!isPro}
               options={[
                 { key: 'light', label: 'ライト' },
                 { key: 'dark', label: 'ダーク' },
@@ -111,7 +139,7 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
               onChange={setMode}
             />
           </View>
-          {!pro && (
+          {!isPro && (
             <Text style={{ fontSize: 11.5, color: c.sub, marginTop: 8 }}>
               ダークモードは Pro 機能です
             </Text>

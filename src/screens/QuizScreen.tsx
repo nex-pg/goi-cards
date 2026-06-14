@@ -14,6 +14,7 @@ import { CATEGORIES, LEVELS, WORD_BY_ID, type Category, type Level, type Word } 
 import { useStore, type CountKey, type StoreApi, type UiState } from '../store/store';
 import { useColors, useTheme } from '../theme/theme';
 import { drawRandomExcluding } from '../quiz/session';
+import { Ev, track } from '../analytics/analytics';
 import { Icon, type IconName } from '../components/Icon';
 import {
   CheckChip,
@@ -227,7 +228,11 @@ export function QuizPlayer({
     tx.value = 0;
   };
 
-  const toggleReveal = () => setRevealed((r) => !r);
+  const toggleReveal = () =>
+    setRevealed((r) => {
+      if (!r) track(Ev.cardRevealed);
+      return !r;
+    });
 
   // タップ（前へ/次へボタン）でも移動できるように。スワイプと同じ演出で確定。
   const go = (dir: number) => {
@@ -463,6 +468,11 @@ export function QuizResult({
   const setCount = (n: number) => store.setCount(countKey, n);
   const knownN = words.filter((w) => store.getTag(w.id).status === 'known').length;
 
+  useEffect(() => {
+    track(Ev.quizFinished, { total: words.length, known: knownN });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
@@ -519,6 +529,14 @@ export function QuizScreen() {
     return drawRandomExcluding(pool, count, usedRef.current);
   };
   const startFresh = () => {
+    const f = store.state.ui.quiz;
+    track(Ev.quizStarted, {
+      source: 'quiz',
+      cats: f.cats,
+      tags: f.tags,
+      levels: f.levels,
+      count: store.state.settings.counts.quiz,
+    });
     usedRef.current = new Set(); // 新しい連続セッション
     setSession(draw());
     setMode('play');

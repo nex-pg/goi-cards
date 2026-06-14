@@ -4,10 +4,11 @@
 //  - 並び順: 続き（前回の次）から継続。
 // このコンポーネントがマウントされている間だけ used/cursor を積み上げる。
 // onClose（別タブ・問題画面に戻る）で破棄され、次回起動時はリフレッシュされる。
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { CountKey, StoreApi } from '../store/store';
 import type { Word } from '../data/words';
 import { drawRandomExcluding, drawSequential } from '../quiz/session';
+import { Ev, track } from '../analytics/analytics';
 import { QuizPlayer, QuizResult } from './QuizScreen';
 
 export function RunnerScreen({
@@ -35,6 +36,11 @@ export function RunnerScreen({
 
   const [mode, setMode] = useState<'play' | 'result'>('play');
   const [session, setSession] = useState<Word[]>(() => make(store.state.settings.counts[countKey]));
+
+  useEffect(() => {
+    track(Ev.quizStarted, { source: countKey, mode: random ? 'random' : 'order' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (mode === 'play')
     return <QuizPlayer store={store} words={session} onFinish={() => setMode('result')} onExit={onClose} />;

@@ -13,6 +13,7 @@ import {
   type Word,
 } from '../data/words';
 import { readJSON, writeJSON } from './storage';
+import { Ev, track } from '../analytics/analytics';
 
 export type Status = 'none' | 'known' | 'unknown';
 export type ListKind = 'bookmark' | 'known' | 'unknown' | 'history';
@@ -222,6 +223,7 @@ export interface StoreApi {
   recordHistory: (id: number) => void;
   setCount: (key: CountKey, n: number) => void;
   setPro: (v: boolean) => void;
+  setEntitlement: (v: boolean) => void;
   setQuizFilters: (f: UiState['quiz']) => void;
   setListPref: (kind: ListKind, pref: Partial<UiState['lists'][ListKind]>) => void;
   setBrowsePref: (pref: Partial<UiState['browse']>) => void;
@@ -231,6 +233,8 @@ const StoreContext = createContext<StoreApi | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<UserState>(loadState);
+  // RevenueCat の entitlement(pro)。永続化しない（毎起動 RevenueCat が真実の源）。
+  const [entitlementPro, setEntitlementPro] = useState(false);
 
   useEffect(() => {
     writeJSON(STORE_KEY, state);
@@ -249,6 +253,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setState((s) => {
       const cur = s.tags[id] || { status: 'none' as Status, statusAt: 0 };
       const next: Status = cur.status === status ? 'none' : status;
+      track(Ev.tagSet, { status: next });
       return {
         ...s,
         tags: { ...s.tags, [id]: { status: next, statusAt: next === 'none' ? 0 : Date.now() } },
@@ -260,8 +265,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setState((s) => {
       const fid = folderId || s.activeFolderId;
       const folder = { ...(s.bookmarks[fid] || {}) };
+      const added = folder[id] == null;
       if (folder[id] != null) delete folder[id];
       else folder[id] = Date.now();
+      track(Ev.bookmarkToggled, { added });
       return { ...s, bookmarks: { ...s.bookmarks, [fid]: folder } };
     });
   }, []);
@@ -378,6 +385,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         bookmarks: { ...s.bookmarks, [id]: {} },
       };
     });
+    track(Ev.folderCreated);
     return id;
   }, []);
 
@@ -454,6 +462,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setPro = useCallback((v: boolean) => setState((s) => ({ ...s, pro: !!v })), []);
+  // IAP 層（RevenueCat）から entitlement を反映する。
+  const setEntitlement = useCallback((v: boolean) => setEntitlementPro(!!v), []);
 
   // ── タブごとの UI 選択状態（フィルタ/ソート/ランダム）の保存 ──
   const setQuizFilters = useCallback((f: UiState['quiz']) => {
@@ -473,7 +483,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // free/pro 出し分け（docs/02 §3）。無料は plan==='free' のみ。
-  const isPro = !!state.pro;
+  // 本番は RevenueCat の entitlement が真実。開発ビルドではテストトグル(state.pro)でも ON にできる。
+  const isPro = entitlementPro || (__DEV__ && !!state.pro);
   const wordVisible = useCallback(
     (id: number) => {
       const w = WORD_BY_ID.get(id);
@@ -508,6 +519,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     recordHistory,
     setCount,
     setPro,
+    setEntitlement,
     setQuizFilters,
     setListPref,
     setBrowsePref,
