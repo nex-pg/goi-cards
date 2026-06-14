@@ -1,6 +1,6 @@
 // 問題タブ: 設定(フィルタ) → カード(タップでめくる/横スワイプ送り) → 結果。
 // prototype/quiz.jsx を React Native + gesture-handler + reanimated に移植。
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, Pressable, ScrollView, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -13,7 +13,7 @@ import Animated, {
 import { CATEGORIES, LEVELS, WORD_BY_ID, type Category, type Level, type Word } from '../data/words';
 import { useStore, type CountKey, type StoreApi, type UiState } from '../store/store';
 import { useColors, useTheme } from '../theme/theme';
-import { shuffle } from '../utils/shuffle';
+import { drawRandomExcluding } from '../quiz/session';
 import { Icon, type IconName } from '../components/Icon';
 import {
   CheckChip,
@@ -509,16 +509,22 @@ export function QuizScreen() {
   const store = useStore();
   const [mode, setMode] = useState<'config' | 'play' | 'result'>('config');
   const [session, setSession] = useState<Word[]>([]);
+  // 「次の問題スタート」を連続で押す間、出題済みを記憶して除外する。
+  // 設定画面からの開始(startFresh)でリセット。別タブはこの画面ごと再マウントされる。
+  const usedRef = useRef<Set<number>>(new Set());
 
-  // 設定したフィルタ（store保存）から毎回あたらしくランダム抽出する。
-  // 「次の問題」も結果一覧の使い回しではなく、フィルタを起点に再生成する。
   const draw = () => {
     const pool = quizPool(store, store.state.ui.quiz);
     const count = store.state.settings.counts.quiz;
-    return shuffle(pool).slice(0, count);
+    return drawRandomExcluding(pool, count, usedRef.current);
   };
   const startFresh = () => {
+    usedRef.current = new Set(); // 新しい連続セッション
     setSession(draw());
+    setMode('play');
+  };
+  const startNext = () => {
+    setSession(draw()); // 出題済みを除外して継続
     setMode('play');
   };
 
@@ -536,7 +542,7 @@ export function QuizScreen() {
       <QuizResult
         store={store}
         words={session}
-        onRestart={() => startFresh()}
+        onRestart={() => startNext()}
         onConfig={() => setMode('config')}
       />
     );
