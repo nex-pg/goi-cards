@@ -14,7 +14,7 @@ import { BrowseScreen } from './screens/BrowseScreen';
 import { FolderListScreen } from './screens/FolderListScreen';
 import { MoreScreen } from './screens/MoreScreen';
 import { RunnerScreen } from './screens/RunnerScreen';
-import { Ev, setAnalyticsOptOut, track } from './analytics/analytics';
+import { Ev, initAnalytics, setAnalyticsOptOut, setUserPlan, track } from './analytics/analytics';
 
 export function Shell() {
   const store = useStore();
@@ -61,10 +61,29 @@ export function Shell() {
     }
   }, [tab, pro, runner]);
 
+  // 起動時: 分析初期化 → オプトアウト/プランを反映 → 起動イベント（この順で）
+  useEffect(() => {
+    initAnalytics();
+    setAnalyticsOptOut(store.state.analyticsOptOut);
+    setUserPlan(store.isPro);
+    track(Ev.appOpened);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 分析オプトアウト設定を分析モジュールへ反映
   useEffect(() => {
     setAnalyticsOptOut(store.state.analyticsOptOut);
   }, [store.state.analyticsOptOut]);
+
+  // プラン(Free/Pro)を super property に反映（アクティブユーザーの分解用）
+  useEffect(() => {
+    setUserPlan(store.isPro);
+  }, [store.isPro]);
+
+  // タブ表示（機能の利用/未利用の把握）。初回(quiz)＋切替で送信。
+  useEffect(() => {
+    track(Ev.tabViewed, { tab });
+  }, [tab]);
 
   let screen: React.ReactNode;
   if (runner) {

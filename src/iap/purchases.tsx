@@ -74,7 +74,8 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
       if (customerInfo?.entitlements?.active?.[ENTITLEMENT_ID]) {
         store.setEntitlement(true);
-        track(Ev.proPurchased);
+        // $set_once: 初回Pro化の時刻を人物属性に（新規Pro登録時期の把握用）
+        track(Ev.proPurchased, { $set_once: { pro_since: new Date().toISOString() } });
         return 'ok';
       }
       return 'error';

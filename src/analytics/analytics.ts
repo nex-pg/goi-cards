@@ -47,8 +47,18 @@ export function track(event: string, props?: Record<string, unknown>): void {
   } catch {}
 }
 
+// プラン(Free/Pro)を全イベントに付与する super property として登録。
+// → PostHog 側で「アクティブユーザーを Free/Pro で分解」「Pro のリテンション」などが取れる。
+export function setUserPlan(isPro: boolean): void {
+  try {
+    posthog?.register({ is_pro: isPro, plan: isPro ? 'pro' : 'free' });
+  } catch {}
+}
+
 // イベント名（docs/05 §3 のイベント設計）
 export const Ev = {
+  appOpened: 'app_opened', // 起動。DAU/WAU・リテンション・新規(初回)の起点
+  tabViewed: 'tab_viewed', // {tab} どのタブ(機能)が見られたか＝利用/未利用の把握
   quizStarted: 'quiz_started', // {source, cats?, tags?, levels?, count, mode?}
   quizFinished: 'quiz_finished', // {total, known}
   cardRevealed: 'card_revealed',
