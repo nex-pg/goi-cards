@@ -39,18 +39,24 @@ export function WordRow({
     >
       {leading}
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1}>
-          <Text style={{ fontFamily: termFontFamily, fontSize: 17, fontWeight: '600', color: c.ink }}>
-            {word.term}
-          </Text>
-          {/* 二字熟語・四字熟語は読めないことが多いので読みを併記 */}
-          {(word.cat === '二字熟語' || word.cat === '四字熟語') && (
-            <Text style={{ fontSize: 13, color: c.sub }}>（{word.yomi}）</Text>
-          )}
+        {/* 1行目: 単語 */}
+        <Text numberOfLines={1} style={{ fontFamily: termFontFamily, fontSize: 17, fontWeight: '600', color: c.ink }}>
+          {word.term}
         </Text>
+        {/* 2行目: 意味 */}
         <Text numberOfLines={2} style={{ fontSize: 14, color: c.text2, marginTop: 3, lineHeight: 20 }}>
           {word.meaning}
         </Text>
+        {/* 3行目: 読み（用語はジャンル）。横併記だと見切れるので独立行に。 */}
+        {(() => {
+          const sub = word.cat === '用語' ? word.sub : word.yomi;
+          if (!sub) return null;
+          return (
+            <Text numberOfLines={1} style={{ fontSize: 12.5, color: c.sub, marginTop: 3 }}>
+              （{sub}）
+            </Text>
+          );
+        })()}
       </View>
       {right != null && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{right}</View>
