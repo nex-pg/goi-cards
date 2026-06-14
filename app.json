@@ -8,8 +8,11 @@
     "scheme": "goicards",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.goicards.app"
+      "supportsTablet": false,
+      "bundleIdentifier": "com.goicards.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.goicards.app",

@@ -1,6 +1,6 @@
 // その他タブ: Proカード（開発用テストトグル）/ 表示モード / 免責 / 法務リンク / 復元購入。
 // prototype/shell.jsx の MoreScreen を移植。docs/03・docs/05 参照。
-import React from 'react';
+import React, { useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useStore } from '../store/store';
 import { useTheme, type ThemeMode } from '../theme/theme';
@@ -8,6 +8,7 @@ import { useToast } from '../hooks/useToast';
 import { usePurchases } from '../iap/purchases';
 import { Icon } from '../components/Icon';
 import { SegTabs, Switch, panel } from '../components/ui';
+import { LicensesScreen } from './LicensesScreen';
 
 // 申請時に GitHub Pages の正式URLへ（docs/ 配下の privacy.html / terms.html を公開）。
 const PRIVACY_URL = 'https://nex-pg.github.io/goi-cards/privacy.html';
@@ -20,6 +21,9 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
   const purchases = usePurchases();
   const isPro = store.isPro; // 実効（entitlement or 開発トグル）
   const devPro = store.state.pro; // 開発用トグルの値
+  const [showLicenses, setShowLicenses] = useState(false);
+
+  if (showLicenses) return <LicensesScreen onClose={() => setShowLicenses(false)} />;
 
   const open = (url: string) => Linking.openURL(url).catch(() => toast('リンクを開けませんでした'));
 
@@ -169,7 +173,8 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
       {/* 法務リンク */}
       <View style={[panel(c), { overflow: 'hidden', marginTop: 18 }]}>
         <LinkRow label="プライバシーポリシー" onPress={() => open(PRIVACY_URL)} />
-        <LinkRow label="利用規約" onPress={() => open(TERMS_URL)} isLast />
+        <LinkRow label="利用規約" onPress={() => open(TERMS_URL)} />
+        <LinkRow label="オープンソースライセンス" onPress={() => setShowLicenses(true)} isLast />
       </View>
 
       {/* 免責表示 */}

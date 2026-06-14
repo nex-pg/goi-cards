@@ -108,5 +108,59 @@ App.tsx                        Providers の組み立て
 | DOM リスト | `FlatList` / `react-native-draggable-flatlist`（編集モードD&D） |
 | `store.pro`（トグル） | `useIsPro()`（`__DEV__` トグル + RevenueCat 差し替え予定） |
 | CSS 変数（色） | `theme/theme.tsx` のトークン |
-| `WORDS`（60語サンプル） | `assets/words.combined.json`（1000語） |
+| `WORDS`（60語サンプル） | `assets/words.combined.json`（1000語超） |
 | ボトムシート（DOM） | `Modal` ベースの `Sheet`（`components/ui.tsx`） |
+
+---
+
+## 環境変数（任意。未設定なら自動で no-op）
+
+`cp .env.example .env` して値を入れる（`.env` は git 管理外）。EAS ビルドでは `eas secret:create` で設定。
+
+| 変数 | 用途 |
+|---|---|
+| `EXPO_PUBLIC_POSTHOG_KEY` / `EXPO_PUBLIC_POSTHOG_HOST` | 分析（PostHog）。未設定なら送信なし |
+| `EXPO_PUBLIC_RC_IOS_KEY` | 課金（RevenueCat / iOS）。未設定なら購入UI非表示 |
+
+`npm run licenses` で `src/assets/licenses.json`（OSSライセンス画面のデータ）を再生成。
+
+---
+
+## リリース手順チェックリスト（iOS）
+
+> 前提: **Apple Developer Program 承認**が完了するまで、TestFlight / App Store Connect / 実機配布・課金テストは開始できない。
+
+### フェーズ0–1：方針・素材（承認前にできる）
+- [ ] 価格決定（¥500 買い切り）／プロダクトID（例 `pro_lifetime`）
+- [ ] アプリアイコン 1024×1024 とスプラッシュを差し替え（現状 Expo デフォルト）
+- [x] iPad 非対応（`app.json` `supportsTablet:false`）＝ iPad スクショ/検証 不要
+- [x] 輸出コンプライアンス（`ios.config.usesNonExemptEncryption:false`）
+- [ ] 単語データの最終レビュー（Gemini 二重チェック＋人手。docs/05）
+- [ ] フォント同梱（Noto Serif/Sans JP）※任意
+
+### フェーズ2：Mac でのローカル確認（承認前にできる）
+- [ ] `npx expo run:ios`（シミュレータ）で全機能確認 ← 実質必須
+- [ ] `npx expo run:ios --device`（実機）※課金テストは承認後に Sandbox で
+
+### フェーズ3：外部サービス
+- [ ] GitHub Pages 公開（`docs/privacy.html` / `terms.html`）→ 連絡先・施行日・管轄を記入
+- [ ] サポートURL/問い合わせ先を用意（申請に必要）
+- [ ] PostHog プロジェクト作成 → キーを設定（分析を入れる場合）
+- [ ] RevenueCat: アプリ登録 / 共有シークレット / Entitlement `pro` / Offering（買い切り1本）/ APIキー
+
+### フェーズ4：App Store Connect（承認後）
+- [ ] アプリレコード作成（Bundle ID `com.goicards.app`）
+- [ ] 有料App契約＋銀行/税情報の登録 ← これが無いと課金が動かない
+- [ ] App内課金（非消耗型・¥500・名称/説明/審査スクショ）
+- [ ] スクリーンショット（iPhone 6.9"/6.7" 1セット。iPad不要）
+- [ ] プライバシー栄養ラベル（分析ありなら Usage Data/Analytics、Tracking=いいえ）
+- [ ] 年齢区分・カテゴリ（教育）・説明文・キーワード
+
+### フェーズ5：ビルド & TestFlight（承認後）
+- [ ] `eas build -p ios --profile production` → `eas submit -p ios`
+- [ ] TestFlight 内部テストで実機確認＋IAP Sandbox（購入/復元）
+
+### フェーズ6：申請 & リリース
+- [ ] 審査用メモ（Pro機能の説明／`__DEV__`トグルは本番非表示）
+- [ ] 「審査に提出」（＝App Store申請）
+- [ ] 承認後リリース
