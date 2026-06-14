@@ -130,7 +130,7 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
         <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
           <Text style={{ fontSize: 14, fontWeight: '700', color: c.ink, marginBottom: 8 }}>免責事項</Text>
           <Text style={{ fontSize: 12, color: c.sub, lineHeight: 22 }}>
-            本アプリの語義・読み・分類・難易度は、学習用に簡略化した参考情報です。正確性・完全性を保証するものではありません。正式な定義は辞書等でご確認ください。内容の誤りにお気づきの際は、アプリ内の報告機能またはお問い合わせ先までご連絡ください。アップデートで順次修正します。
+            本アプリの語義・読み・分類・難易度は、学習用に簡略化した参考情報です。正確性・完全性を保証するものではありません。正式な定義は辞書等でご確認ください。
           </Text>
         </View>
       </View>

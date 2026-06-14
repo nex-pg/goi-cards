@@ -236,6 +236,12 @@ export function QuizPlayer({
     });
   };
 
+  // わかる/わからないを付けて次へ進む（トグル解除はせず必ずその状態にする）
+  const markAndNext = (status: 'known' | 'unknown') => {
+    if (store.getTag(word.id).status !== status) store.setStatus(word.id, status);
+    go(1);
+  };
+
   const pan = Gesture.Pan()
     .onUpdate((e) => {
       tx.value = e.translationX;
@@ -312,6 +318,20 @@ export function QuizPlayer({
               cardStyle,
             ]}
           >
+            {/* 左右スワイプの目印（一目で送れると分かるように。操作は妨げない） */}
+            <View
+              pointerEvents="none"
+              style={{ position: 'absolute', left: 6, top: 0, bottom: 0, justifyContent: 'center', opacity: 0.5 }}
+            >
+              <Icon name="chevL" size={20} color={c.sub} />
+            </View>
+            <View
+              pointerEvents="none"
+              style={{ position: 'absolute', right: 6, top: 0, bottom: 0, justifyContent: 'center', opacity: 0.5 }}
+            >
+              <Icon name="chevR" size={20} color={c.sub} />
+            </View>
+
             {/* 見出し語 */}
             <View
               style={{
@@ -398,12 +418,12 @@ export function QuizPlayer({
 
       {/* 3ボタン */}
       <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingTop: 6, paddingBottom: 16 }}>
-        <ActionBtn label="わかる" icon="check" active={tag.status === 'known'} onPress={() => store.setStatus(word.id, 'known')} />
+        <ActionBtn label="わかる" icon="check" active={tag.status === 'known'} onPress={() => markAndNext('known')} />
         <ActionBtn
           label="わからない"
           icon="cross"
           active={tag.status === 'unknown'}
-          onPress={() => store.setStatus(word.id, 'unknown')}
+          onPress={() => markAndNext('unknown')}
         />
         <ActionBtn label="ブックマーク" icon="bookmark" active={bmFolders.length > 0} filledIcon onPress={onBookmark} />
       </View>

@@ -87,7 +87,7 @@ export function BrowseProGate({ onUpgrade, onClose }: { onUpgrade: () => void; o
   return (
     <ProInfoDialog
       title="一覧は Pro 機能です"
-      message="辞書のように全単語を見出順でブラウズし、検索やタグ・分類・難易度で絞り込めます。今後追加される単語もすべて使えます。"
+      message="辞書のように全単語を見出順でブラウズし、検索やタグ・分類・難易度で絞り込めます。"
       onUpgrade={onUpgrade}
       onClose={onClose}
     />
