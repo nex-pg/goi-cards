@@ -236,10 +236,13 @@ export function QuizPlayer({
     });
   };
 
-  // わかる/わからないを付けて次へ進む（トグル解除はせず必ずその状態にする）
-  const markAndNext = (status: 'known' | 'unknown') => {
-    if (store.getTag(word.id).status !== status) store.setStatus(word.id, status);
-    go(1);
+  // わかる/わからない:
+  //  - 未選択(タグなし)からの初回回答 → 状態を付けて次へ進む
+  //  - すでに状態が付いている → 切り替え/解除のみ（戻ってきた操作なので進まない）
+  const onAnswer = (status: 'known' | 'unknown') => {
+    const hadStatus = store.getTag(word.id).status !== 'none';
+    store.setStatus(word.id, status); // 通常のトグル（同じものを押すと解除/別を押すと切替）
+    if (!hadStatus) go(1);
   };
 
   const pan = Gesture.Pan()
@@ -418,12 +421,12 @@ export function QuizPlayer({
 
       {/* 3ボタン */}
       <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingTop: 6, paddingBottom: 16 }}>
-        <ActionBtn label="わかる" icon="check" active={tag.status === 'known'} onPress={() => markAndNext('known')} />
+        <ActionBtn label="わかる" icon="check" active={tag.status === 'known'} onPress={() => onAnswer('known')} />
         <ActionBtn
           label="わからない"
           icon="cross"
           active={tag.status === 'unknown'}
-          onPress={() => markAndNext('unknown')}
+          onPress={() => onAnswer('unknown')}
         />
         <ActionBtn label="ブックマーク" icon="bookmark" active={bmFolders.length > 0} filledIcon onPress={onBookmark} />
       </View>
