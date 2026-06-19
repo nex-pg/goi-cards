@@ -53,6 +53,7 @@ export function BrowseScreen({ store, onLaunch }: { store: StoreApi; onLaunch: (
   const count = store.state.settings.counts.browse;
   const setCount = (n: number) => store.setCount('browse', n);
   const [query, setQuery] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(true); // タグ/分類/難易度の3行の開閉
   const random = browse.random;
   const setRandom = (fn: (r: boolean) => boolean) => store.setBrowsePref({ random: fn(random) });
   const [editing, setEditing] = useState(false);
@@ -270,6 +271,14 @@ export function BrowseScreen({ store, onLaunch }: { store: StoreApi; onLaunch: (
               </Pressable>
             )}
           </View>
+          {/* 絞り込み3行の開閉トグル（編集の左） */}
+          <Pressable
+            onPress={() => setFiltersOpen((v) => !v)}
+            hitSlop={8}
+            style={{ paddingVertical: 4, paddingHorizontal: 2 }}
+          >
+            <Icon name={filtersOpen ? 'chevDown' : 'chevR'} size={20} color={c.ink} />
+          </Pressable>
           {ids.length > 0 && (
             <Pressable
               onPress={() => {
@@ -283,24 +292,29 @@ export function BrowseScreen({ store, onLaunch }: { store: StoreApi; onLaunch: (
           )}
         </View>
 
-        {/* タグフィルタ */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingBottom: 10 }}>
-          {tagChips.map((ch) => (
-            <PillChip key={ch.k} label={ch.l} on={browse.tags.includes(ch.k)} onPress={() => toggleTag(ch.k)} />
-          ))}
-        </ScrollView>
-        {/* 分類フィルタ */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingBottom: 10 }}>
-          {catChips.map((ch) => (
-            <PillChip key={ch.key} label={ch.label} on={browse.cats.includes(ch.key)} onPress={() => toggleCat(ch.key)} />
-          ))}
-        </ScrollView>
-        {/* 難易度フィルタ */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingBottom: 12 }}>
-          {levelChips.map((ch) => (
-            <PillChip key={ch.key} label={ch.label} on={browse.levels.includes(ch.key)} onPress={() => toggleLevel(ch.key)} />
-          ))}
-        </ScrollView>
+        {/* タグ/分類/難易度の3行（トグルで開閉。スタート行は常時表示） */}
+        {filtersOpen && (
+          <>
+            {/* タグフィルタ */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingBottom: 10 }}>
+              {tagChips.map((ch) => (
+                <PillChip key={ch.k} label={ch.l} on={browse.tags.includes(ch.k)} onPress={() => toggleTag(ch.k)} />
+              ))}
+            </ScrollView>
+            {/* 分類フィルタ */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingBottom: 10 }}>
+              {catChips.map((ch) => (
+                <PillChip key={ch.key} label={ch.label} on={browse.cats.includes(ch.key)} onPress={() => toggleCat(ch.key)} />
+              ))}
+            </ScrollView>
+            {/* 難易度フィルタ */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingBottom: 12 }}>
+              {levelChips.map((ch) => (
+                <PillChip key={ch.key} label={ch.label} on={browse.levels.includes(ch.key)} onPress={() => toggleLevel(ch.key)} />
+              ))}
+            </ScrollView>
+          </>
+        )}
 
         {!editing && <StartBar count={count} setCount={setCount} random={random} setRandom={setRandom} onStart={launch} n={ids.length} />}
       </View>
