@@ -10,9 +10,9 @@ import { Icon } from '../components/Icon';
 import { SegTabs, Switch, panel } from '../components/ui';
 import { LicensesScreen } from './LicensesScreen';
 
-// 申請時に GitHub Pages の正式URLへ（docs/ 配下の privacy.html / terms.html を公開）。
-const PRIVACY_URL = 'https://nex-pg.github.io/goi-cards/privacy.html';
-const TERMS_URL = 'https://nex-pg.github.io/goi-cards/terms.html';
+// 法務ページは公開リポジトリ goi-cards-legal で配信（本体を Private にしても配信継続できる）。
+const PRIVACY_URL = 'https://nex-pg.github.io/goi-cards-legal/privacy.html';
+const TERMS_URL = 'https://nex-pg.github.io/goi-cards-legal/terms.html';
 
 export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
   const store = useStore();

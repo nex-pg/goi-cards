@@ -143,7 +143,7 @@ App.tsx                        Providers の組み立て
 - [ ] `npx expo run:ios --device`（実機）※課金テストは承認後に Sandbox で
 
 ### フェーズ3：外部サービス
-- [ ] GitHub Pages 公開（`docs/privacy.html` / `terms.html`）→ 連絡先・施行日・管轄を記入
+- [ ] 法務ページ公開（別の公開リポジトリ `goi-cards-legal` で GitHub Pages 配信。本体を Private にしても継続可）→ 連絡先・施行日・管轄を記入
 - [ ] サポートURL/問い合わせ先を用意（申請に必要）
 - [ ] PostHog プロジェクト作成 → キーを設定（分析を入れる場合）
 - [ ] RevenueCat: アプリ登録 / 共有シークレット / Entitlement `pro` / Offering（買い切り1本）/ APIキー
