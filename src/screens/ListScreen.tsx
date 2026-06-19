@@ -185,10 +185,9 @@ export function ListScreen({
 
   const deleteIds = (ids: number[]) => {
     if (!ids.length) return;
-    const snap = store.buildSnapshot(ids);
     store.removeFrom(ids, meta.kindTag);
     setDraft((d) => (d ? d.filter((id) => !ids.includes(id)) : d));
-    toast(`${ids.length}件を削除しました`, 'もとに戻す', () => store.restore(snap));
+    toast(`${ids.length}件を削除しました`);
   };
   const confirmDelete = () => {
     deleteIds([...selected]);
