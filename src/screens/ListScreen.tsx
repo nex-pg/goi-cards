@@ -209,7 +209,7 @@ export function ListScreen({
     }
     store.assignTo(ids, 'bookmark', fid);
     const suffix = added < ids.length ? `（上限${MAX_BOOKMARKS_PER_FOLDER}のため一部）` : '';
-    toast(`${added}件を「${fname}」に保存${suffix}`, 'もとに戻す', () => store.restore(snap));
+    toast(`${added}件を「${fname}」に保存${suffix}`);
     setSelected(new Set());
   };
   const doSave = (dest: string) => {
@@ -226,7 +226,7 @@ export function ListScreen({
     }
     store.assignTo(ids, dest as Dest);
     const label = dest === 'known' ? 'わかる' : 'わからない';
-    toast(`${ids.length}件を「${label}」に保存`, 'もとに戻す', () => store.restore(snap));
+    toast(`${ids.length}件を「${label}」に保存`);
     setSelected(new Set());
   };
   const saveToFolder = (fid: string) => {

@@ -134,7 +134,7 @@ export function BrowseScreen({ store, onLaunch }: { store: StoreApi; onLaunch: (
     }
     store.assignTo(arr, 'bookmark', fid);
     const suffix = added < arr.length ? `（上限${MAX_BOOKMARKS_PER_FOLDER}のため一部）` : '';
-    toast(`${added}件を「${fname}」に保存${suffix}`, 'もとに戻す', () => store.restore(s));
+    toast(`${added}件を「${fname}」に保存${suffix}`);
     setSelected(new Set());
   };
 
@@ -150,7 +150,7 @@ export function BrowseScreen({ store, onLaunch }: { store: StoreApi; onLaunch: (
       return;
     }
     store.assignTo(a, dest);
-    toast(`${a.length}件に「${DEST_LABEL[dest]}」を付与`, 'もとに戻す', () => store.restore(s));
+    toast(`${a.length}件に「${DEST_LABEL[dest]}」を付与`);
     setSelected(new Set());
   };
   const saveToFolder = (fid: string) => {
@@ -184,7 +184,7 @@ export function BrowseScreen({ store, onLaunch }: { store: StoreApi; onLaunch: (
         const a = [...selected];
         const s = store.buildSnapshot(a);
         store.removeAllTags(a);
-        toast(`${a.length}件のタグを解除しました`, 'もとに戻す', () => store.restore(s));
+        toast(`${a.length}件のタグを解除しました`);
         setSelected(new Set());
         setConfirm(null);
       },
