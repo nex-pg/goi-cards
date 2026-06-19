@@ -4,8 +4,10 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import {
   CATEGORIES,
   LEVELS,
+  MAX_BOOKMARKS_PER_FOLDER,
   MAX_FOLDER_NAME,
   MAX_FOLDERS,
+  MAX_HISTORY,
   WORD_BY_ID,
   WORDS,
   type Category,
@@ -224,6 +226,7 @@ export interface StoreApi {
   reorderFolders: (orderedIds: string[]) => void;
   setActiveFolder: (id: string) => void;
   bookmarkFoldersOf: (id: number) => string[];
+  bookmarkCount: (folderId?: string) => number;
   recordHistory: (id: number) => void;
   setCount: (key: CountKey, n: number) => void;
   setPro: (v: boolean) => void;
@@ -270,10 +273,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setState((s) => {
       const fid = folderId || s.activeFolderId;
       const folder = { ...(s.bookmarks[fid] || {}) };
-      const added = folder[id] == null;
-      if (folder[id] != null) delete folder[id];
-      else folder[id] = Date.now();
-      track(Ev.bookmarkToggled, { added });
+      if (folder[id] != null) {
+        delete folder[id];
+        track(Ev.bookmarkToggled, { added: false });
+      } else {
+        // 上限（1フォルダ200件）に達していたら追加しない
+        if (Object.keys(folder).length >= MAX_BOOKMARKS_PER_FOLDER) return s;
+        folder[id] = Date.now();
+        track(Ev.bookmarkToggled, { added: true });
+      }
       return { ...s, bookmarks: { ...s.bookmarks, [fid]: folder } };
     });
   }, []);
@@ -283,8 +291,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (dest === 'bookmark') {
         const fid = folderId || s.activeFolderId;
         const folder = { ...(s.bookmarks[fid] || {}) };
+        // 空き枠（200 - 現在件数）の分だけ追加。超過分は無視。
+        let room = MAX_BOOKMARKS_PER_FOLDER - Object.keys(folder).length;
         ids.forEach((id) => {
-          if (folder[id] == null) folder[id] = Date.now();
+          if (folder[id] == null && room > 0) {
+            folder[id] = Date.now();
+            room--;
+          }
         });
         return { ...s, bookmarks: { ...s.bookmarks, [fid]: folder } };
       }
@@ -454,11 +467,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const bookmarkFoldersOf = useCallback((id: number) => foldersWith(state, id), [state]);
+  const bookmarkCount = useCallback(
+    (folderId?: string) => Object.keys(state.bookmarks[folderId || state.activeFolderId] || {}).length,
+    [state]
+  );
 
   const recordHistory = useCallback((id: number) => {
     setState((s) => {
       const history = [...s.history.filter((h) => h.id !== id), { id, at: Date.now() }];
-      return { ...s, history };
+      // 最新 MAX_HISTORY 件のみ保持（末尾が新しい）
+      const trimmed = history.length > MAX_HISTORY ? history.slice(history.length - MAX_HISTORY) : history;
+      return { ...s, history: trimmed };
     });
   }, []);
 
@@ -525,6 +544,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     reorderFolders,
     setActiveFolder,
     bookmarkFoldersOf,
+    bookmarkCount,
     recordHistory,
     setCount,
     setPro,

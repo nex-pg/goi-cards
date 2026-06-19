@@ -30,6 +30,10 @@ export const LEVELS: { code: Level; label: string }[] = [
 // ブックマークフォルダの上限・名前長（全角文字数）
 export const MAX_FOLDERS = 100;
 export const MAX_FOLDER_NAME = 30;
+// 1フォルダが保持できるブックマーク件数の上限
+export const MAX_BOOKMARKS_PER_FOLDER = 200;
+// 履歴の保持件数（最新N件）
+export const MAX_HISTORY = 200;
 
 export const WORDS: Word[] = (raw as { words: Word[] }).words;
 

@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
-import { WORD_BY_ID, byYomi, type Word } from '../data/words';
+import { MAX_BOOKMARKS_PER_FOLDER, WORD_BY_ID, byYomi, type Word } from '../data/words';
 import { useStore, type Dest, type ListKind, type SortKey, type Snapshot, type StoreApi } from '../store/store';
 import { useColors } from '../theme/theme';
 import { useToast } from '../hooks/useToast';
@@ -195,6 +195,24 @@ export function ListScreen({
     setSelected(new Set());
     setConfirmDel(false);
   };
+  // フォルダに実際に追加できる件数（非メンバー＆空き枠でキャップ）
+  const addableToFolder = (ids: number[], fid: string) => {
+    const folder = store.state.bookmarks[fid] || {};
+    const nonMembers = ids.filter((id) => folder[id] == null).length;
+    const room = Math.max(0, MAX_BOOKMARKS_PER_FOLDER - Object.keys(folder).length);
+    return Math.min(nonMembers, room);
+  };
+  const saveBookmark = (ids: number[], fid: string, snap: Snapshot, fname: string) => {
+    const added = addableToFolder(ids, fid);
+    if (added === 0) {
+      toast(`このフォルダは${MAX_BOOKMARKS_PER_FOLDER}件までです`);
+      return;
+    }
+    store.assignTo(ids, 'bookmark', fid);
+    const suffix = added < ids.length ? `（上限${MAX_BOOKMARKS_PER_FOLDER}のため一部）` : '';
+    toast(`${added}件を「${fname}」に保存${suffix}`, 'もとに戻す', () => store.restore(snap));
+    setSelected(new Set());
+  };
   const doSave = (dest: string) => {
     const ids = [...selected];
     const snap = store.buildSnapshot(ids);
@@ -204,9 +222,7 @@ export function ListScreen({
         setFolderPick({ ids, snap });
         return;
       }
-      store.assignTo(ids, 'bookmark', 'default');
-      toast(`${ids.length}件をブックマークに保存`, 'もとに戻す', () => store.restore(snap));
-      setSelected(new Set());
+      saveBookmark(ids, 'default', snap, 'ブックマーク');
       return;
     }
     store.assignTo(ids, dest as Dest);
@@ -217,10 +233,8 @@ export function ListScreen({
   const saveToFolder = (fid: string) => {
     if (!folderPick) return;
     const { ids, snap } = folderPick;
-    store.assignTo(ids, 'bookmark', fid);
     const fname = store.state.folders.find((f) => f.id === fid)?.name || '';
-    toast(`${ids.length}件を「${fname}」に保存`, 'もとに戻す', () => store.restore(snap));
-    setSelected(new Set());
+    saveBookmark(ids, fid, snap, fname);
     setFolderPick(null);
   };
 

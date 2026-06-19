@@ -10,9 +10,18 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { CATEGORIES, LEVELS, WORD_BY_ID, type Category, type Level, type Word } from '../data/words';
+import {
+  CATEGORIES,
+  LEVELS,
+  MAX_BOOKMARKS_PER_FOLDER,
+  WORD_BY_ID,
+  type Category,
+  type Level,
+  type Word,
+} from '../data/words';
 import { useStore, type CountKey, type StoreApi, type UiState } from '../store/store';
 import { useColors, useTheme } from '../theme/theme';
+import { useToast } from '../hooks/useToast';
 import { drawRandomExcluding } from '../quiz/session';
 import { Ev, track } from '../analytics/analytics';
 import { Icon, type IconName } from '../components/Icon';
@@ -186,6 +195,7 @@ export function QuizPlayer({
 }) {
   const c = useColors();
   const { termFontFamily } = useTheme();
+  const toast = useToast();
   const [idx, setIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [folderPick, setFolderPick] = useState(false);
@@ -205,12 +215,21 @@ export function QuizPlayer({
   const tag = store.getTag(word.id);
   const bmFolders = store.bookmarkFoldersOf(word.id);
 
+  const tryBookmark = (fid: string) => {
+    const isMember = (store.state.bookmarks[fid] || {})[word.id] != null;
+    if (!isMember && store.bookmarkCount(fid) >= MAX_BOOKMARKS_PER_FOLDER) {
+      toast(`このフォルダは${MAX_BOOKMARKS_PER_FOLDER}件までです`);
+      return;
+    }
+    store.toggleBookmark(word.id, fid);
+  };
+
   const onBookmark = () => {
     if (store.state.folders.length > 1) {
       setFolderPick(true);
       return;
     }
-    store.toggleBookmark(word.id, 'default');
+    tryBookmark('default');
   };
 
   const commitGo = (dir: number) => {
@@ -441,7 +460,7 @@ export function QuizPlayer({
           title="ブックマーク先フォルダ"
           folders={store.state.folders}
           isMember={(fid) => (store.state.bookmarks[fid] || {})[word.id] != null}
-          onPick={(fid) => store.toggleBookmark(word.id, fid)}
+          onPick={(fid) => tryBookmark(fid)}
           onClose={() => setFolderPick(false)}
         />
       )}

@@ -2,7 +2,7 @@
 // prototype/lists.jsx の BrowseScreen を移植。
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Keyboard, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { CATEGORIES, LEVELS, PRO_WORD_COUNT, byYomi, type Word } from '../data/words';
+import { CATEGORIES, LEVELS, MAX_BOOKMARKS_PER_FOLDER, PRO_WORD_COUNT, byYomi, type Word } from '../data/words';
 import { useStore, type Dest, type Snapshot, type StoreApi } from '../store/store';
 import { useColors } from '../theme/theme';
 import { useToast } from '../hooks/useToast';
@@ -119,24 +119,45 @@ export function BrowseScreen({ store, onLaunch }: { store: StoreApi; onLaunch: (
   const allSelected = ids.length > 0 && selected.size === ids.length;
   const toggleAll = () => setSelected(allSelected ? new Set() : new Set(ids));
 
+  // フォルダに実際に追加できる件数（非メンバー＆空き枠でキャップ）
+  const addableToFolder = (arr: number[], fid: string) => {
+    const folder = store.state.bookmarks[fid] || {};
+    const nonMembers = arr.filter((id) => folder[id] == null).length;
+    const room = Math.max(0, MAX_BOOKMARKS_PER_FOLDER - Object.keys(folder).length);
+    return Math.min(nonMembers, room);
+  };
+  const saveBookmark = (arr: number[], fid: string, s: Snapshot, fname: string) => {
+    const added = addableToFolder(arr, fid);
+    if (added === 0) {
+      toast(`このフォルダは${MAX_BOOKMARKS_PER_FOLDER}件までです`);
+      return;
+    }
+    store.assignTo(arr, 'bookmark', fid);
+    const suffix = added < arr.length ? `（上限${MAX_BOOKMARKS_PER_FOLDER}のため一部）` : '';
+    toast(`${added}件を「${fname}」に保存${suffix}`, 'もとに戻す', () => store.restore(s));
+    setSelected(new Set());
+  };
+
   const runAssign = (dest: Dest) => {
     const a = [...selected];
     const s = store.buildSnapshot(a);
-    if (dest === 'bookmark' && store.state.folders.length > 1) {
-      setFolderPick({ ids: a, snap: s });
+    if (dest === 'bookmark') {
+      if (store.state.folders.length > 1) {
+        setFolderPick({ ids: a, snap: s });
+        return;
+      }
+      saveBookmark(a, 'default', s, 'ブックマーク');
       return;
     }
-    store.assignTo(a, dest, dest === 'bookmark' ? 'default' : undefined);
+    store.assignTo(a, dest);
     toast(`${a.length}件に「${DEST_LABEL[dest]}」を付与`, 'もとに戻す', () => store.restore(s));
     setSelected(new Set());
   };
   const saveToFolder = (fid: string) => {
     if (!folderPick) return;
     const { ids: fids, snap: s } = folderPick;
-    store.assignTo(fids, 'bookmark', fid);
     const fname = store.state.folders.find((f) => f.id === fid)?.name || '';
-    toast(`${fids.length}件を「${fname}」に保存`, 'もとに戻す', () => store.restore(s));
-    setSelected(new Set());
+    saveBookmark(fids, fid, s, fname);
     setFolderPick(null);
   };
   const onPickDest = (dest: string) => {
