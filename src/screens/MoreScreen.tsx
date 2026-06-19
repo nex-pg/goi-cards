@@ -1,18 +1,13 @@
-// その他タブ: Proカード（開発用テストトグル）/ 表示モード / 免責 / 法務リンク / 復元購入。
-// prototype/shell.jsx の MoreScreen を移植。docs/03・docs/05 参照。
-import React, { useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+// その他タブ: Proカード（開発用テストトグル）/ 表示モード / 分析オプトアウト / 免責 / 復元購入。
+// 法務は最小構成（App Store にプライバシーポリシーURL＋Apple標準EULA）。アプリ内リンクは置かない。
+import React from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useStore } from '../store/store';
 import { useTheme, type ThemeMode } from '../theme/theme';
 import { useToast } from '../hooks/useToast';
 import { usePurchases } from '../iap/purchases';
 import { Icon } from '../components/Icon';
 import { SegTabs, Switch, panel } from '../components/ui';
-import { LicensesScreen } from './LicensesScreen';
-
-// 法務ページは公開リポジトリ goi-cards-legal で配信（本体を Private にしても配信継続できる）。
-const PRIVACY_URL = 'https://nex-pg.github.io/goi-cards-legal/privacy.html';
-const TERMS_URL = 'https://nex-pg.github.io/goi-cards-legal/terms.html';
 
 export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
   const store = useStore();
@@ -21,11 +16,6 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
   const purchases = usePurchases();
   const isPro = store.isPro; // 実効（entitlement or 開発トグル）
   const devPro = store.state.pro; // 開発用トグルの値
-  const [showLicenses, setShowLicenses] = useState(false);
-
-  if (showLicenses) return <LicensesScreen onClose={() => setShowLicenses(false)} />;
-
-  const open = (url: string) => Linking.openURL(url).catch(() => toast('リンクを開けませんでした'));
 
   const restore = async () => {
     if (!purchases.available) {
@@ -170,13 +160,6 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
         </View>
       </View>
 
-      {/* 法務リンク */}
-      <View style={[panel(c), { overflow: 'hidden', marginTop: 18 }]}>
-        <LinkRow label="プライバシーポリシー" onPress={() => open(PRIVACY_URL)} />
-        <LinkRow label="利用規約" onPress={() => open(TERMS_URL)} />
-        <LinkRow label="オープンソースライセンス" onPress={() => setShowLicenses(true)} isLast />
-      </View>
-
       {/* 免責表示 */}
       <View style={[panel(c), { overflow: 'hidden', marginTop: 18 }]}>
         <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
@@ -187,26 +170,5 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
         </View>
       </View>
     </ScrollView>
-  );
-}
-
-function LinkRow({ label, onPress, isLast }: { label: string; onPress: () => void; isLast?: boolean }) {
-  const { colors: c } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        borderBottomWidth: isLast ? 0 : 1,
-        borderBottomColor: c.line,
-      }}
-    >
-      <Text style={{ fontSize: 15, fontWeight: '600', color: c.ink }}>{label}</Text>
-      <Icon name="chevR" size={18} color={c.sub} />
-    </Pressable>
   );
 }

@@ -122,8 +122,6 @@ App.tsx                        Providers の組み立て
 | `EXPO_PUBLIC_POSTHOG_KEY` / `EXPO_PUBLIC_POSTHOG_HOST` | 分析（PostHog）。未設定なら送信なし |
 | `EXPO_PUBLIC_RC_IOS_KEY` | 課金（RevenueCat / iOS）。未設定なら購入UI非表示 |
 
-`npm run licenses` で `src/assets/licenses.json`（OSSライセンス画面のデータ）を再生成。
-
 ---
 
 ## リリース手順チェックリスト（iOS）
@@ -143,7 +141,7 @@ App.tsx                        Providers の組み立て
 - [ ] `npx expo run:ios --device`（実機）※課金テストは承認後に Sandbox で
 
 ### フェーズ3：外部サービス
-- [ ] 法務ページ公開（別の公開リポジトリ `goi-cards-legal` で GitHub Pages 配信。本体を Private にしても継続可）→ 連絡先・施行日・管轄を記入
+- [ ] プライバシーポリシー公開（公開リポジトリ `goi-cards-legal` の GitHub Pages。本体を Private にしても継続可）→ 連絡先・施行日を記入。利用規約は独自ページを設けず Apple 標準 EULA を適用
 - [ ] サポートURL/問い合わせ先を用意（申請に必要）
 - [ ] PostHog プロジェクト作成 → キーを設定（分析を入れる場合）
 - [ ] RevenueCat: アプリ登録 / 共有シークレット / Entitlement `pro` / Offering（買い切り1本）/ APIキー
