@@ -147,18 +147,12 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
         </View>
       </View>
 
-      {/* プライバシー（分析オプトアウト） */}
-      <View style={[panel(c), { overflow: 'hidden', marginTop: 18 }]}>
-        <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <Text style={{ fontSize: 16, fontWeight: '600', color: c.ink }}>利用状況の分析を許可</Text>
-            <Switch on={!store.state.analyticsOptOut} onChange={(v) => store.setAnalyticsOptOut(!v)} />
-          </View>
-          <Text style={{ fontSize: 11.5, color: c.sub, marginTop: 8, lineHeight: 18 }}>
-            アプリ改善のため、匿名の利用状況（どの画面・機能を使ったか）を送信します。広告や個人の特定、他社アプリをまたぐ追跡は行いません。オフにすると送信を停止します。
-          </Text>
-        </View>
-      </View>
+      {/*
+        分析オプトアウトのUIは非表示（参考アプリに合わせ最小構成）。
+        ON/OFF の仕組みはコードに残してあるので、再表示したい場合は
+        store.state.analyticsOptOut / store.setAnalyticsOptOut(...) を使う Switch を
+        ここに置けばよい（既定は false＝分析オン。Shell が analytics 側へ反映する）。
+      */}
 
       {/* 免責表示 */}
       <View style={[panel(c), { overflow: 'hidden', marginTop: 18 }]}>
