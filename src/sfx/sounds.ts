@@ -13,8 +13,8 @@ function ensure() {
   if (ready) return;
   ready = true;
   try {
-    startP = createAudioPlayer(require('../assets/sfx/start.wav'));
-    swipeP = createAudioPlayer(require('../assets/sfx/swipe.wav'));
+    startP = createAudioPlayer(require('../assets/sfx/01start.mp3'));
+    swipeP = createAudioPlayer(require('../assets/sfx/02card.mp3'));
     if (startP) startP.volume = 0.5;
     if (swipeP) swipeP.volume = 0.45;
   } catch (e) {
