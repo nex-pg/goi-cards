@@ -40,7 +40,8 @@
             "backgroundColor": "#121211"
           }
         }
-      ]
+      ],
+      "expo-audio"
     ]
   }
 }

@@ -22,6 +22,7 @@ import {
 import { useStore, type CountKey, type StoreApi, type UiState } from '../store/store';
 import { useColors, useTheme } from '../theme/theme';
 import { useToast } from '../hooks/useToast';
+import { playStart, playSwipe } from '../sfx/sounds';
 import { drawRandomExcluding } from '../quiz/session';
 import { Ev, track } from '../analytics/analytics';
 import { Icon, type IconName } from '../components/Icon';
@@ -123,7 +124,12 @@ function QuizConfig({ store, onStart }: { store: StoreApi; onStart: () => void }
       </View>
 
       <Pressable
-        onPress={() => canStart && onStart()}
+        onPress={() => {
+          if (canStart) {
+            playStart();
+            onStart();
+          }
+        }}
         disabled={!canStart}
         style={{
           marginTop: 16,
@@ -245,6 +251,7 @@ export function QuizPlayer({
     setRevealed(false);
     setIdx(target);
     tx.value = 0;
+    playSwipe();
   };
 
   const toggleReveal = () =>
@@ -510,7 +517,10 @@ export function QuizResult({
         </View>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 12 }}>
           <Pressable
-            onPress={() => onRestart(count)}
+            onPress={() => {
+              playStart();
+              onRestart(count);
+            }}
             style={{ flex: 1, paddingVertical: 15, borderRadius: 14, backgroundColor: c.ink, alignItems: 'center' }}
           >
             <Text style={{ fontSize: 15.5, fontWeight: '700', color: c.paper }}>次の問題スタート</Text>

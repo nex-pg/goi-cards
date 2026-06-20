@@ -2,6 +2,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useColors } from '../theme/theme';
+import { playStart } from '../sfx/sounds';
 import { Icon } from './Icon';
 import { NumberDial } from './ui';
 
@@ -27,7 +28,12 @@ export function StartBar({
   return (
     <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 12 }}>
       <Pressable
-        onPress={() => can && onStart()}
+        onPress={() => {
+          if (can) {
+            playStart();
+            onStart();
+          }
+        }}
         disabled={!can}
         style={{
           flex: 1,
