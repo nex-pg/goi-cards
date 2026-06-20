@@ -268,12 +268,13 @@ export function QuizPlayer({
   };
 
   // わかる/わからない:
-  //  - 未選択(タグなし)からの初回回答 → 状態を付けて次へ進む
-  //  - すでに状態が付いている → 切り替え/解除のみ（戻ってきた操作なので進まない）
+  //  - 結果が「わかる/わからない」になる選択（初回回答 or 反対側への切替）→ 次へ進む
+  //  - 同じものを再タップして「解除（none）」になるときだけ → 進まない（留まる）
   const onAnswer = (status: 'known' | 'unknown') => {
-    const hadStatus = store.getTag(word.id).status !== 'none';
-    store.setStatus(word.id, status); // 通常のトグル（同じものを押すと解除/別を押すと切替）
-    if (!hadStatus) go(1);
+    const cur = store.getTag(word.id).status;
+    const next = cur === status ? 'none' : status; // setStatus と同じトグル結果
+    store.setStatus(word.id, status);
+    if (next !== 'none') go(1);
   };
 
   const pan = Gesture.Pan()
