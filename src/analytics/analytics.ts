@@ -20,6 +20,12 @@ export function initAnalytics(): void {
       captureNativeAppLifecycleEvents: false,
       // セッションリプレイ等は使わない（デフォルト無効だが明示）
     });
+    // IP/位置情報の匿名化（GDPR配慮）。全イベントに付与:
+    //  - $ip を 0.0.0.0 に上書き → 実IPを保存しない
+    //  - $geoip_disable → 都市/国などの位置推定をしない
+    try {
+      posthog.register({ $ip: '0.0.0.0', $geoip_disable: true });
+    } catch {}
     // 既にオプトアウトされている場合は SDK 側にも反映
     if (optedOut) {
       try {
