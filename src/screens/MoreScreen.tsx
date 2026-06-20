@@ -65,19 +65,23 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
               else if (r === 'unavailable') toast('現在購入できません');
               // cancelled はトーストしない
             }}
-            style={{
-              borderTopWidth: 1,
-              borderTopColor: c.line,
+            style={({ pressed }) => ({
+              marginHorizontal: 12,
+              marginTop: 4,
+              marginBottom: 12,
+              backgroundColor: c.ink,
+              borderRadius: 12,
               paddingHorizontal: 16,
-              paddingVertical: 14,
+              paddingVertical: 15,
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-            }}
+              opacity: pressed ? 0.85 : 1,
+            })}
           >
-            <Text style={{ fontSize: 15, fontWeight: '700', color: c.ink }}>Proにアップグレード</Text>
+            <Text style={{ fontSize: 15.5, fontWeight: '800', color: c.paper }}>Proにアップグレード</Text>
             {purchases.priceString && (
-              <Text style={{ fontSize: 14, fontWeight: '700', color: c.ink }}>{purchases.priceString}</Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: c.paper }}>{purchases.priceString}</Text>
             )}
           </Pressable>
         )}

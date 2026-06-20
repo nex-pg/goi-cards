@@ -118,6 +118,10 @@ export function FolderListScreen({ store, onClose }: { store: StoreApi; onClose:
             {f.name}
             {isDefault && <Text style={{ fontSize: 11, color: c.sub, fontWeight: '500' }}>　固定</Text>}
           </Text>
+          {/* 件数（名前が長くても見えるよう flexShrink:0 で固定） */}
+          <Text style={{ flexShrink: 0, fontSize: 12.5, fontWeight: '600', color: c.sub }}>
+            {store.bookmarkCount(f.id)} 語
+          </Text>
           {editing ? (
             !isDefault && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>

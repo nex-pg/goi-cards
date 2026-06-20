@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '../theme/theme';
 import { Icon, type IconName } from './Icon';
+import { playTab } from '../sfx/sounds';
 
 export type TabKey = 'quiz' | 'bookmark' | 'history' | 'browse' | 'more';
 
@@ -35,7 +36,10 @@ export function TabBar({ tab, onTab }: { tab: TabKey; onTab: (k: TabKey) => void
         return (
           <Pressable
             key={t.key}
-            onPress={() => onTab(t.key)}
+            onPress={() => {
+              playTab(); // メニュー切替音
+              onTab(t.key);
+            }}
             style={{ flex: 1, alignItems: 'center', gap: 3, paddingVertical: 4 }}
           >
             <Icon name={t.icon} size={23} filled={active && t.key === 'bookmark'} stroke={active ? 2 : 1.7} color={color} />

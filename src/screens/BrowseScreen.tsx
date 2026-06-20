@@ -61,6 +61,7 @@ export function BrowseScreen({ store, onLaunch }: { store: StoreApi; onLaunch: (
   const [savePrompt, setSavePrompt] = useState(false);
   const [confirm, setConfirm] = useState<{ message: string; label: string; onConfirm: () => void } | null>(null);
   const [folderPick, setFolderPick] = useState<{ ids: number[]; snap: Snapshot } | null>(null);
+  const [pickNotice, setPickNotice] = useState(''); // フォルダピッカー内の通知（Modalの裏に隠れるトーストの代替）
 
   // 「すべて」ロジック: allKey ONで他OFF / 他ONでall OFF / 空ならallへ戻す
   const applyMulti = (current: string[], key: string, allKey: string): string[] => {
@@ -119,21 +120,18 @@ export function BrowseScreen({ store, onLaunch }: { store: StoreApi; onLaunch: (
   const allSelected = ids.length > 0 && selected.size === ids.length;
   const toggleAll = () => setSelected(allSelected ? new Set() : new Set(ids));
 
-  // フォルダに実際に追加できる件数（非メンバー＆空き枠でキャップ）
-  const addableToFolder = (arr: number[], fid: string) => {
-    const folder = store.state.bookmarks[fid] || {};
-    const nonMembers = arr.filter((id) => folder[id] == null).length;
-    const room = Math.max(0, MAX_BOOKMARKS_PER_FOLDER - Object.keys(folder).length);
-    return Math.min(nonMembers, room);
-  };
   const saveBookmark = (arr: number[], fid: string, s: Snapshot, fname: string) => {
-    const added = addableToFolder(arr, fid);
+    const folder = store.state.bookmarks[fid] || {};
+    const nonMembers = arr.filter((id) => folder[id] == null).length; // まだ入っていない件数
+    const room = Math.max(0, MAX_BOOKMARKS_PER_FOLDER - Object.keys(folder).length);
+    const added = Math.min(nonMembers, room);
     if (added === 0) {
-      toast(`このフォルダは${MAX_BOOKMARKS_PER_FOLDER}件までです`);
+      toast(nonMembers === 0 ? `すでに「${fname}」に保存済みです` : `このフォルダは${MAX_BOOKMARKS_PER_FOLDER}件までです`);
       return;
     }
     store.assignTo(arr, 'bookmark', fid);
-    const suffix = added < arr.length ? `（上限${MAX_BOOKMARKS_PER_FOLDER}のため一部）` : '';
+    // 「一部のみ」は“上限で切れた時だけ”表示（既に保存済みの分は除外して判定）
+    const suffix = added < nonMembers ? `（上限${MAX_BOOKMARKS_PER_FOLDER}のため一部）` : '';
     toast(`${added}件を「${fname}」に保存${suffix}`);
     setSelected(new Set());
   };
@@ -153,12 +151,29 @@ export function BrowseScreen({ store, onLaunch }: { store: StoreApi; onLaunch: (
     toast(`${a.length}件に「${DEST_LABEL[dest]}」を付与`);
     setSelected(new Set());
   };
-  const saveToFolder = (fid: string) => {
+  // 複数フォルダ対応: タップでそのフォルダへ追加/解除をトグル（シートは閉じない）。
+  // - 選択中の全アイテムがそのフォルダに入っていれば → まとめて解除
+  // - そうでなければ → 非メンバーを空き枠まで追加
+  const toggleFolder = (fid: string) => {
     if (!folderPick) return;
-    const { ids: fids, snap: s } = folderPick;
+    const ids = folderPick.ids;
+    const folder = store.state.bookmarks[fid] || {};
     const fname = store.state.folders.find((f) => f.id === fid)?.name || '';
-    saveBookmark(fids, fid, s, fname);
-    setFolderPick(null);
+    const allIn = ids.every((id) => folder[id] != null);
+    if (allIn) {
+      store.removeFrom(ids, 'bookmark', fid); // 解除
+      setPickNotice('');
+      return;
+    }
+    const nonMembers = ids.filter((id) => folder[id] == null).length;
+    const room = Math.max(0, MAX_BOOKMARKS_PER_FOLDER - Object.keys(folder).length);
+    if (nonMembers > room) {
+      // 全部入れると上限(200)を超える → 部分保存せず、シート内に即時通知（タップしたフォルダの直下）
+      setPickNotice(`「${fname}」は${MAX_BOOKMARKS_PER_FOLDER}件まで。選択分が入りきりません`);
+      return;
+    }
+    store.assignTo(ids, 'bookmark', fid); // 追加（全件入る）
+    setPickNotice('');
   };
   const onPickDest = (dest: string) => {
     setSavePrompt(false);
@@ -405,11 +420,16 @@ export function BrowseScreen({ store, onLaunch }: { store: StoreApi; onLaunch: (
       )}
       {folderPick && (
         <FolderPickerSheet
-          title="保存先フォルダ"
+          title="保存先フォルダ（タップで追加/解除・複数可）"
           folders={store.state.folders}
           isMember={(fid) => folderPick.ids.every((id) => (store.state.bookmarks[fid] || {})[id] != null)}
-          onPick={saveToFolder}
-          onClose={() => setFolderPick(null)}
+          onPick={toggleFolder}
+          notice={pickNotice}
+          onClose={() => {
+            setFolderPick(null);
+            setSelected(new Set());
+            setPickNotice('');
+          }}
         />
       )}
     </View>

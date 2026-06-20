@@ -414,12 +414,14 @@ export function FolderPickerSheet({
   isMember,
   onPick,
   onClose,
+  notice,
 }: {
   title?: string;
   folders: Folder[];
   isMember?: (folderId: string) => boolean;
   onPick: (folderId: string) => void;
   onClose: () => void;
+  notice?: string; // シート内に表示する通知（上限超過など）。Modalの裏に隠れるトーストの代わり。
 }) {
   const c = useColors();
   return (
@@ -457,6 +459,11 @@ export function FolderPickerSheet({
           })}
         </View>
       </ScrollView>
+      {notice ? (
+        <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.ink, textAlign: 'center' }}>{notice}</Text>
+        </View>
+      ) : null}
       <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
         <Pressable onPress={onClose} style={{ paddingVertical: 14, alignItems: 'center' }}>
           <Text style={{ fontSize: 16, color: c.sub }}>閉じる</Text>

@@ -22,7 +22,7 @@ import {
 import { useStore, type CountKey, type StoreApi, type UiState } from '../store/store';
 import { useColors, useTheme } from '../theme/theme';
 import { useToast } from '../hooks/useToast';
-import { playStart, playSwipe } from '../sfx/sounds';
+import { playStart, playSwipe, playResult, playFlip } from '../sfx/sounds';
 import { drawRandomExcluding } from '../quiz/session';
 import { Ev, track } from '../analytics/analytics';
 import { Icon, type IconName } from '../components/Icon';
@@ -257,6 +257,7 @@ export function QuizPlayer({
   const toggleReveal = () =>
     setRevealed((r) => {
       if (!r) track(Ev.cardRevealed);
+      playFlip(); // カードめくり音（表↔裏 両方向）
       return !r;
     });
 
@@ -497,6 +498,7 @@ export function QuizResult({
 
   useEffect(() => {
     track(Ev.quizFinished, { total: words.length, known: knownN });
+    playResult(); // 結果画面表示＝終わりの合図（全入口で共通）
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -118,6 +118,7 @@ export function ListScreen({
   const [savePrompt, setSavePrompt] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [folderPick, setFolderPick] = useState<{ ids: number[]; snap: Snapshot } | null>(null);
+  const [pickNotice, setPickNotice] = useState(''); // フォルダピッカー内の通知（Modalの裏に隠れるトーストの代替）
 
   // ソース語の id 配列
   const baseIds = useMemo(() => {
@@ -194,21 +195,18 @@ export function ListScreen({
     setSelected(new Set());
     setConfirmDel(false);
   };
-  // フォルダに実際に追加できる件数（非メンバー＆空き枠でキャップ）
-  const addableToFolder = (ids: number[], fid: string) => {
-    const folder = store.state.bookmarks[fid] || {};
-    const nonMembers = ids.filter((id) => folder[id] == null).length;
-    const room = Math.max(0, MAX_BOOKMARKS_PER_FOLDER - Object.keys(folder).length);
-    return Math.min(nonMembers, room);
-  };
   const saveBookmark = (ids: number[], fid: string, snap: Snapshot, fname: string) => {
-    const added = addableToFolder(ids, fid);
+    const folder = store.state.bookmarks[fid] || {};
+    const nonMembers = ids.filter((id) => folder[id] == null).length; // まだ入っていない件数
+    const room = Math.max(0, MAX_BOOKMARKS_PER_FOLDER - Object.keys(folder).length);
+    const added = Math.min(nonMembers, room);
     if (added === 0) {
-      toast(`このフォルダは${MAX_BOOKMARKS_PER_FOLDER}件までです`);
+      toast(nonMembers === 0 ? `すでに「${fname}」に保存済みです` : `このフォルダは${MAX_BOOKMARKS_PER_FOLDER}件までです`);
       return;
     }
     store.assignTo(ids, 'bookmark', fid);
-    const suffix = added < ids.length ? `（上限${MAX_BOOKMARKS_PER_FOLDER}のため一部）` : '';
+    // 「一部のみ」は“上限で切れた時だけ”表示（既に保存済みの分は除外して判定）
+    const suffix = added < nonMembers ? `（上限${MAX_BOOKMARKS_PER_FOLDER}のため一部）` : '';
     toast(`${added}件を「${fname}」に保存${suffix}`);
     setSelected(new Set());
   };
@@ -229,12 +227,29 @@ export function ListScreen({
     toast(`${ids.length}件を「${label}」に保存`);
     setSelected(new Set());
   };
-  const saveToFolder = (fid: string) => {
+  // 複数フォルダ対応: タップでそのフォルダへ追加/解除をトグル（シートは閉じない）。
+  // - 選択中の全アイテムがそのフォルダに入っていれば → まとめて解除
+  // - そうでなければ → 非メンバーを空き枠まで追加
+  const toggleFolder = (fid: string) => {
     if (!folderPick) return;
-    const { ids, snap } = folderPick;
+    const ids = folderPick.ids;
+    const folder = store.state.bookmarks[fid] || {};
     const fname = store.state.folders.find((f) => f.id === fid)?.name || '';
-    saveBookmark(ids, fid, snap, fname);
-    setFolderPick(null);
+    const allIn = ids.every((id) => folder[id] != null);
+    if (allIn) {
+      store.removeFrom(ids, 'bookmark', fid); // 解除
+      setPickNotice('');
+      return;
+    }
+    const nonMembers = ids.filter((id) => folder[id] == null).length;
+    const room = Math.max(0, MAX_BOOKMARKS_PER_FOLDER - Object.keys(folder).length);
+    if (nonMembers > room) {
+      // 全部入れると上限(200)を超える → 部分保存せず、シート内に即時通知（タップしたフォルダの直下）
+      setPickNotice(`「${fname}」は${MAX_BOOKMARKS_PER_FOLDER}件まで。選択分が入りきりません`);
+      return;
+    }
+    store.assignTo(ids, 'bookmark', fid); // 追加（全件入る）
+    setPickNotice('');
   };
 
   const launch = () => {
@@ -313,7 +328,11 @@ export function ListScreen({
         {listKind === 'bookmark' && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingBottom: 10 }}>
             <Icon name="bookmark" size={14} filled color={c.sub} />
-            <Text style={{ fontSize: 12.5, fontWeight: '600', color: c.sub }}>{activeFolderName}</Text>
+            <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 12.5, fontWeight: '600', color: c.sub }}>
+              {activeFolderName}
+            </Text>
+            {/* 件数（名前が長くても見えるよう flexShrink:0 で固定） */}
+            <Text style={{ flexShrink: 0, fontSize: 12.5, fontWeight: '600', color: c.sub }}>・ {displayIds.length} 語</Text>
           </View>
         )}
       </View>
@@ -401,11 +420,16 @@ export function ListScreen({
       )}
       {folderPick && (
         <FolderPickerSheet
-          title="保存先フォルダ"
+          title="保存先フォルダ（タップで追加/解除・複数可）"
           folders={store.state.folders}
           isMember={(fid) => folderPick.ids.every((id) => (store.state.bookmarks[fid] || {})[id] != null)}
-          onPick={saveToFolder}
-          onClose={() => setFolderPick(null)}
+          onPick={toggleFolder}
+          notice={pickNotice}
+          onClose={() => {
+            setFolderPick(null);
+            setSelected(new Set());
+            setPickNotice('');
+          }}
         />
       )}
       {confirmDel && (
