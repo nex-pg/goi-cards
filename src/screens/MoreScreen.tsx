@@ -51,7 +51,7 @@ export function MoreScreen({ proHighlight }: { proHighlight?: boolean }) {
             ・<Text style={{ color: c.ink }}>一覧機能</Text>（辞書ブラウズ・検索・タグ/分類/難易度の絞り込み）{'\n'}
             ・<Text style={{ color: c.ink }}>ブックマークの複数フォルダ管理</Text>（最大100）{'\n'}
             ・<Text style={{ color: c.ink }}>ダークモード</Text>（表示モードの切替）{'\n'}
-            ・<Text style={{ color: c.ink }}>Pro限定の単語を利用可能</Text>
+            ・<Text style={{ color: c.ink }}>Pro限定の単語を利用可能</Text>（1,000語超）
           </Text>
         </View>
 
