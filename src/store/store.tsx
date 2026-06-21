@@ -174,12 +174,26 @@ function migrate(s: any): UserState {
   };
 }
 
+// 読み込んだ状態の構造を最低限つじつま合わせ（壊れた保存データ・孤立参照への防御）。
+function normalize(s: UserState): UserState {
+  const folders = Array.isArray(s.folders) && s.folders.length ? s.folders : [{ id: 'default', name: 'デフォルト', createdAt: Date.now() }];
+  const folderIds = new Set(folders.map((f) => f.id));
+  // 全フォルダに bookmarks エントリを保証（無いと toggle/assign が孤立セットを作る）
+  const bookmarks = { ...(s.bookmarks || {}) };
+  folders.forEach((f) => {
+    if (!bookmarks[f.id]) bookmarks[f.id] = {};
+  });
+  // activeFolderId が存在しなければ default に戻す
+  const activeFolderId = folderIds.has(s.activeFolderId) ? s.activeFolderId : 'default';
+  return { ...s, folders, bookmarks, activeFolderId };
+}
+
 function loadState(): UserState {
   // 移行処理で万一エラーが出てもクラッシュさせない（クラッシュ→再インストール＝本当の消失を防ぐ）。
   // 注意: アップデート間で STORE_KEY / MMKV id を変えると保存が読めなくなる（=消えたように見える）ので絶対に変えない。
   try {
     const raw = readJSON<any>(STORE_KEY);
-    if (raw) return ensureUi(ensureCounts(migrate(raw)));
+    if (raw) return normalize(ensureUi(ensureCounts(migrate(raw))));
   } catch (e) {
     if (__DEV__) console.warn('[store] 読み込み/移行に失敗。既定値で起動します', e);
   }
@@ -392,20 +406,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // ── ブックマークフォルダ管理（Pro機能） ──
-  const createFolder = useCallback((name: string): string => {
-    const id = 'f' + Date.now();
-    setState((s) => {
-      if (s.folders.length >= MAX_FOLDERS) return s;
-      const nm = (name || '新しいフォルダ').slice(0, MAX_FOLDER_NAME);
-      return {
-        ...s,
-        folders: [...s.folders, { id, name: nm, createdAt: Date.now() }],
-        bookmarks: { ...s.bookmarks, [id]: {} },
-      };
-    });
-    track(Ev.folderCreated);
-    return id;
-  }, []);
+  const createFolder = useCallback(
+    (name: string): string => {
+      // 上限到達時は作成しない（未作成のidを返さない・分析も過剰計上しない）
+      if (state.folders.length >= MAX_FOLDERS) return '';
+      const id = 'f' + Date.now();
+      setState((s) => {
+        if (s.folders.length >= MAX_FOLDERS) return s; // 念のための二重チェック
+        const nm = (name || '新しいフォルダ').slice(0, MAX_FOLDER_NAME);
+        return {
+          ...s,
+          folders: [...s.folders, { id, name: nm, createdAt: Date.now() }],
+          bookmarks: { ...s.bookmarks, [id]: {} },
+        };
+      });
+      track(Ev.folderCreated);
+      return id;
+    },
+    [state]
+  );
 
   const renameFolder = useCallback((id: string, name: string) => {
     setState((s) => ({

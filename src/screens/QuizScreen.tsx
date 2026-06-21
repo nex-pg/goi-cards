@@ -21,7 +21,6 @@ import {
 } from '../data/words';
 import { useStore, type CountKey, type StoreApi, type UiState } from '../store/store';
 import { useColors, useTheme } from '../theme/theme';
-import { useToast } from '../hooks/useToast';
 import { playStart, playSwipe, playResult, playFlip } from '../sfx/sounds';
 import { drawRandomExcluding } from '../quiz/session';
 import { Ev, track } from '../analytics/analytics';
@@ -201,10 +200,10 @@ export function QuizPlayer({
 }) {
   const c = useColors();
   const { termFontFamily } = useTheme();
-  const toast = useToast();
   const [idx, setIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [folderPick, setFolderPick] = useState(false);
+  const [pickNotice, setPickNotice] = useState(''); // ピッカー内通知（Modalの裏に隠れるトースト対策）
   const tx = useSharedValue(0);
   const cardStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: tx.value }, { rotate: `${tx.value * 0.012}deg` }],
@@ -224,10 +223,13 @@ export function QuizPlayer({
   const tryBookmark = (fid: string) => {
     const isMember = (store.state.bookmarks[fid] || {})[word.id] != null;
     if (!isMember && store.bookmarkCount(fid) >= MAX_BOOKMARKS_PER_FOLDER) {
-      toast(`このフォルダは${MAX_BOOKMARKS_PER_FOLDER}件までです`);
+      // シートはModalなのでトーストは裏に隠れる → シート内通知で出す
+      const fname = store.state.folders.find((f) => f.id === fid)?.name || '';
+      setPickNotice(`「${fname}」は${MAX_BOOKMARKS_PER_FOLDER}件までです`);
       return;
     }
     store.toggleBookmark(word.id, fid);
+    setPickNotice('');
   };
 
   const onBookmark = () => {
@@ -470,7 +472,11 @@ export function QuizPlayer({
           folders={store.state.folders}
           isMember={(fid) => (store.state.bookmarks[fid] || {})[word.id] != null}
           onPick={(fid) => tryBookmark(fid)}
-          onClose={() => setFolderPick(false)}
+          notice={pickNotice}
+          onClose={() => {
+            setFolderPick(false);
+            setPickNotice('');
+          }}
         />
       )}
     </View>

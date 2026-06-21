@@ -76,9 +76,10 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
         store.setEntitlement(true);
         // $set_once: 初回Pro化の時刻を人物属性に（新規Pro登録時期の把握用）
         track(Ev.proPurchased, { $set_once: { pro_since: new Date().toISOString() } });
-        return 'ok';
       }
-      return 'error';
+      // 例外が出ない＝購入は完了（課金済み）。entitlement の反映が遅れても“失敗”にはしない。
+      // 反映漏れは addCustomerInfoUpdateListener が拾って付与する。
+      return 'ok';
     } catch (e: any) {
       if (e?.userCancelled) return 'cancelled';
       if (__DEV__) console.warn('[iap] 購入失敗', e);
@@ -92,7 +93,9 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
     try {
       const info = await Purchases.restorePurchases();
       const restored = !!info?.entitlements?.active?.[ENTITLEMENT_ID];
-      store.setEntitlement(restored);
+      // 復元は「付与のみ」。restored=false（別アカウント等）でも既存のProを剥奪しない。
+      // 無効化は addCustomerInfoUpdateListener に任せる。
+      if (restored) store.setEntitlement(true);
       return { restored };
     } catch (e) {
       if (__DEV__) console.warn('[iap] 復元失敗', e);
